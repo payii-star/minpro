@@ -12,7 +12,7 @@
                 Pakaian kami hadir untuk kamu yang ingin tetap stylish, rapi, dan berkelas di setiap momen.
             </p>
             <a href="#baju" id="btn-beli"
-               class="inline-block bg-black text-white px-6 md:px-8 py-3 rounded-full btn-anim">
+            class="inline-block bg-black text-white px-6 md:px-8 py-3 rounded-full btn-anim">
                 Belanja Sekarang
             </a>
         </div>
@@ -143,7 +143,7 @@
     @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
 
     .btn-anim { transition: all 0.3s ease; }
-    .btn-anim:hover { transform: scale(1.05); background-color: #6b21a8; }
+    .btn-anim:hover { transform: scale(1.05); background-color: #000000ff; }
 </style>
 @endpush
 

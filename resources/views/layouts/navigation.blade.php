@@ -1,30 +1,34 @@
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100 sticky top-0 z-50">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
+        <!-- gunakan grid 3 kolom supaya menu selalu center relatif ke ruang antara kiri & kanan -->
+        <div class="grid grid-cols-3 items-center h-16">
+            <!-- Left: Logo -->
             <div class="flex items-center">
-                <!-- Logo -->
                 <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">
                     <a href="{{ url('/') }}" class="flex items-center gap-1">
                         <span class="text-black-900">Velora</span><span class="text-black-600"> Co</span>
                     </a>
                 </h1>
+            </div>
 
-                <!-- Navigation Links (desktop) -->
-                <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
+            <!-- Center: Navigation Links (centered) -->
+            <div class="flex justify-center">
+                <div class="hidden sm:flex space-x-8">
                     <a href="#baju" class="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Baju</a>
                     <a href="#celana" class="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Celana</a>
                     <a href="#jaket" class="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Jaket</a>
                 </div>
             </div>
 
-            <div class="flex items-center">
+            <!-- Right: Cart + Auth + Hamburger -->
+            <div class="flex items-center justify-end space-x-4">
                 <!-- Cart (desktop) -->
-                <div class="hidden sm:flex sm:items-center sm:mr-4">
+                <div class="hidden sm:flex sm:items-center">
                     <a href="{{ route('cart.index') }}" class="relative inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-600 bg-white hover:text-gray-800 hover:bg-gray-50 transition ease-in-out duration-150">
                         <!-- Cart icon -->
                         <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 6h14l-2-6M10 21a1 1 0 11-2 0 1 1 0 012 0zm8 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 6h14l-2-6M10 21a1 1 0 11-2 0 1 1 0 012 0zm8 0a1 1 0 11-2 0 1 1 0 012 0z" />
                         </svg>
 
                         <!-- Count badge -->
@@ -35,17 +39,16 @@
                     </a>
                 </div>
 
-                <!-- Right side: auth links or user dropdown -->
-                @guest
-                    <div class="space-x-4">
-                        <a href="{{ route('login') }}" class="text-sm font-medium text-gray-600 hover:text-gray-800">Login</a>
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="text-sm font-semibold text-gray-900 bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200">Register</a>
-                        @endif
-                    </div>
-                @else
-                    <!-- Settings Dropdown (desktop) -->
-                    <div class="hidden sm:flex sm:items-center sm:ml-6">
+                <!-- Auth links / dropdown (desktop) -->
+                <div class="hidden sm:flex sm:items-center">
+                    @guest
+                        <div class="space-x-4">
+                            <a href="{{ route('login') }}" class="text-sm font-medium text-gray-600 hover:text-gray-800">Login</a>
+                            @if (Route::has('register'))
+                                <a href="{{ route('register') }}" class="text-sm font-semibold text-gray-900 bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200">Register</a>
+                            @endif
+                        </div>
+                    @else
                         <x-dropdown align="right" width="48">
                             <x-slot name="trigger">
                                 <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-600 bg-white hover:text-gray-800 focus:outline-none transition ease-in-out duration-150">
@@ -79,12 +82,10 @@
                                 </form>
                             </x-slot>
                         </x-dropdown>
-                    </div>
+                    @endguest
+                </div>
 
-                    <!-- Mobile hamburger handled below -->
-                @endguest
-
-                <!-- Hamburger (mobile) -->
+                <!-- Mobile hamburger (visible on small screens) -->
                 <div class="-mr-2 flex items-center sm:hidden">
                     <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out" aria-controls="mobile-menu" aria-expanded="false">
                         <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
@@ -110,7 +111,7 @@
             <a href="{{ route('cart.index') }}" class="flex items-center justify-between py-2">
                 <div class="flex items-center gap-3">
                     <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 6h14l-2-6M10 21a1 1 0 11-2 0 1 1 0 012 0zm8 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 6h14l-2-6M10 21a1 1 0 11-2 0 1 1 0 012 0zm8 0a1 1 0 11-2 0 1 1 0 012 0z" />
                     </svg>
                     <span class="font-medium text-base text-gray-700">Cart</span>
                 </div>
@@ -150,7 +151,7 @@
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <x-responsive-nav-link :href="route('logout')"
-                                               onclick="event.preventDefault(); this.closest('form').submit();">
+                                            onclick="event.preventDefault(); this.closest('form').submit();">
                             {{ __('Log Out') }}
                         </x-responsive-nav-link>
                     </form>
