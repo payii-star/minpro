@@ -16,20 +16,21 @@ class CartController extends Controller
             'qty' => 'nullable|integer|min:1'
         ]);
 
-        $qty = $data['qty'] ?? 1;
+        // internal gunakan 'quantity' untuk konsistensi
+        $quantity = $data['qty'] ?? 1;
 
         $cart = session()->get('cart', []);
 
         if (isset($cart[$data['id']])) {
-            $cart[$data['id']]['qty'] += $qty;
-            $cart[$data['id']]['subtotal'] = $cart[$data['id']]['qty'] * $cart[$data['id']]['price'];
+            $cart[$data['id']]['quantity'] += $quantity;
+            $cart[$data['id']]['subtotal'] = $cart[$data['id']]['quantity'] * $cart[$data['id']]['price'];
         } else {
             $cart[$data['id']] = [
                 'id' => $data['id'],
                 'name' => $data['name'],
                 'price' => $data['price'],
-                'qty' => $qty,
-                'subtotal' => $data['price'] * $qty,
+                'quantity' => $quantity,            // NOTE: pakai 'quantity'
+                'subtotal' => $data['price'] * $quantity,
             ];
         }
 
@@ -41,27 +42,36 @@ class CartController extends Controller
     // Tampilkan isi keranjang
     public function index()
     {
-        $cart = session()->get('cart', []);
+        $cartAssoc = session()->get('cart', []);
+        $cart = array_values($cartAssoc); // jadikan indexed array untuk view
+
         $total = array_reduce($cart, function ($carry, $item) {
-            return $carry + $item['subtotal'];
+            return $carry + ($item['subtotal'] ?? (($item['price'] ?? 0) * ($item['quantity'] ?? 1)));
         }, 0);
 
         return view('cart', compact('cart', 'total'));
     }
 
-    // Update kuantitas
+    // Update kuantitas (menerima 'qty' atau 'quantity')
     public function update(Request $request)
     {
         $data = $request->validate([
             'id' => 'required',
-            'qty' => 'required|integer|min:1'
+            'qty' => 'nullable|integer|min:1',
+            'quantity' => 'nullable|integer|min:1',
         ]);
+
+        $newQty = $data['qty'] ?? $data['quantity'] ?? null;
+
+        if ($newQty === null) {
+            return back()->with('error', 'Kuantitas tidak valid');
+        }
 
         $cart = session()->get('cart', []);
 
         if (isset($cart[$data['id']])) {
-            $cart[$data['id']]['qty'] = $data['qty'];
-            $cart[$data['id']]['subtotal'] = $cart[$data['id']]['qty'] * $cart[$data['id']]['price'];
+            $cart[$data['id']]['quantity'] = (int) $newQty; // simpan ke key 'quantity'
+            $cart[$data['id']]['subtotal'] = $cart[$data['id']]['quantity'] * $cart[$data['id']]['price'];
             session(['cart' => $cart]);
             return back()->with('success', 'Jumlah produk diperbarui');
         }

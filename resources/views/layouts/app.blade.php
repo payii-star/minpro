@@ -17,26 +17,27 @@
     {{-- Tempat untuk CSS tambahan dari child views --}}
     @stack('styles')
 </head>
-<body class="font-sans antialiased bg-white text-gray-900">
+<body class="font-sans antialiased bg-white text-gray-900 min-h-screen flex flex-col">
 
-    <div class="min-h-screen bg-gray-100">
-        {{-- include navigation partial (pastikan file resources/views/layouts/navigation.blade.php ada) --}}
-        @include('layouts.navigation')
+    {{-- navigation --}}
+    @include('layouts.navigation')
 
-        {{-- Optional header section (child views dapat men-set @section('header') ) --}}
-        @hasSection('header')
-            <header class="bg-white shadow">
-                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    @yield('header')
-                </div>
-            </header>
-        @endif
+    {{-- Optional header section (child views dapat men-set @section('header') ) --}}
+    @hasSection('header')
+        <header class="bg-white shadow">
+            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                @yield('header')
+            </div>
+        </header>
+    @endif
 
-        {{-- Main content area: child views harus @section('content') --}}
-        <main>
-            @yield('content')
-        </main>
-    </div>
+    {{-- Main content area: child views harus @section('content') --}}
+    <main class="flex-grow">
+        @yield('content')
+    </main>
+
+    {{-- Footer: include sekali di layout, setelah main --}}
+    @include('layouts.footer')
 
     {{-- Tempat untuk JS tambahan dari child views --}}
     @stack('scripts')

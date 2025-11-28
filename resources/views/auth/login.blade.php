@@ -78,13 +78,6 @@
 
                 <!-- Remember Me -->
                 <div class="flex items-center justify-between">
-                    <label for="remember_me" class="inline-flex items-center">
-                        <input id="remember_me" type="checkbox"
-                            class="rounded border-gray-300 text-black shadow-sm focus:ring-black"
-                            name="remember">
-                        <span class="ml-2 text-sm text-gray-600">Ingat saya</span>
-                    </label>
-
                     @if (Route::has('password.request'))
                         <a href="{{ route('password.request') }}"
                         class="text-sm text-black hover:text-gray-800 font-medium">                            

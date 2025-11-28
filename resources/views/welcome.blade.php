@@ -40,21 +40,27 @@
             @for ($i = 1; $i <= 10; $i++)
                 @php
                     $imgPath = file_exists(public_path("images/model-{$i}.jpg")) ? asset("images/model-{$i}.jpg") : asset('model.jpg');
+                    $productName = "Baju Trendy {$i}";
+                    $productPrice = $hargaBaju[$i - 1];
                 @endphp
 
                 <div class="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
-                    <img src="{{ $imgPath }}" alt="Baju {{ $i }}" class="w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300">
+                    <img src="{{ $imgPath }}" alt="{{ $productName }}" class="w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300">
                     <div class="p-4 space-y-2">
-                        <h4 class="font-semibold text-gray-800">Baju Trendy {{ $i }}</h4>
-                        <p class="text-gray-500 text-sm">Rp {{ number_format($hargaBaju[$i - 1], 0, ',', '.') }}</p>
+                        <h4 class="font-semibold text-gray-800">{{ $productName }}</h4>
+                        <p class="text-gray-500 text-sm">Rp {{ number_format($productPrice, 0, ',', '.') }}</p>
                         <div class="flex gap-2">
+                            <!-- Form ADD TO CART: kirim id,name,price,qty sesuai CartController -->
                             <form action="{{ route('cart.add') }}" method="POST" class="flex-1">
                                 @csrf
-                                <input type="hidden" name="product_id" value="{{ $i }}">
-                                <input type="hidden" name="product_type" value="baju">
+                                <input type="hidden" name="id" value="{{ $i }}">
+                                <input type="hidden" name="name" value="{{ $productName }}">
+                                <input type="hidden" name="price" value="{{ $productPrice }}">
+                                <input type="hidden" name="qty" value="1">
                                 <button class="w-full bg-black text-white text-sm py-2 rounded-full btn-anim" type="submit">Keranjang</button>
                             </form>
 
+                            <!-- Checkout tetap menggunakan GET ke page checkout, bisa pakai query param -->
                             <form action="{{ route('checkout.index') }}" method="GET" class="flex-1">
                                 <input type="hidden" name="product_id" value="{{ $i }}">
                                 <button class="w-full bg-gray-900 text-white text-sm py-2 rounded-full btn-anim" type="submit">Checkout</button>
@@ -74,18 +80,22 @@
                 @php
                     $imgIndex = 10 + $i;
                     $imgPath = file_exists(public_path("images/model-{$imgIndex}.jpg")) ? asset("images/model-{$imgIndex}.jpg") : asset('model.jpg');
+                    $productName = "Celana Panjang {$i}";
+                    $productPrice = $hargaCelana[$i - 1];
                 @endphp
 
                 <div class="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
-                    <img src="{{ $imgPath }}" alt="Celana {{ $i }}" class="w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300">
+                    <img src="{{ $imgPath }}" alt="{{ $productName }}" class="w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300">
                     <div class="p-4 space-y-2">
-                        <h4 class="font-semibold text-gray-800">Celana Panjang {{ $i }}</h4>
-                        <p class="text-gray-500 text-sm">Rp {{ number_format($hargaCelana[$i - 1], 0, ',', '.') }}</p>
+                        <h4 class="font-semibold text-gray-800">{{ $productName }}</h4>
+                        <p class="text-gray-500 text-sm">Rp {{ number_format($productPrice, 0, ',', '.') }}</p>
                         <div class="flex gap-2">
                             <form action="{{ route('cart.add') }}" method="POST" class="flex-1">
                                 @csrf
-                                <input type="hidden" name="product_id" value="{{ $imgIndex }}">
-                                <input type="hidden" name="product_type" value="celana">
+                                <input type="hidden" name="id" value="{{ $imgIndex }}">
+                                <input type="hidden" name="name" value="{{ $productName }}">
+                                <input type="hidden" name="price" value="{{ $productPrice }}">
+                                <input type="hidden" name="qty" value="1">
                                 <button class="w-full bg-black text-white text-sm py-2 rounded-full btn-anim" type="submit">Keranjang</button>
                             </form>
 
@@ -108,18 +118,22 @@
                 @php
                     $imgIndex = 20 + $i;
                     $imgPath = file_exists(public_path("images/model-{$imgIndex}.jpg")) ? asset("images/model-{$imgIndex}.jpg") : asset('model.jpg');
+                    $productName = "Jaket Stylish {$i}";
+                    $productPrice = $hargaJaket[$i - 1];
                 @endphp
 
                 <div class="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
-                    <img src="{{ $imgPath }}" alt="Jaket {{ $i }}" class="w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300">
+                    <img src="{{ $imgPath }}" alt="{{ $productName }}" class="w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300">
                     <div class="p-4 space-y-2">
-                        <h4 class="font-semibold text-gray-800">Jaket Stylish {{ $i }}</h4>
-                        <p class="text-gray-500 text-sm">Rp {{ number_format($hargaJaket[$i - 1], 0, ',', '.') }}</p>
+                        <h4 class="font-semibold text-gray-800">{{ $productName }}</h4>
+                        <p class="text-gray-500 text-sm">Rp {{ number_format($productPrice, 0, ',', '.') }}</p>
                         <div class="flex gap-2">
                             <form action="{{ route('cart.add') }}" method="POST" class="flex-1">
                                 @csrf
-                                <input type="hidden" name="product_id" value="{{ $imgIndex }}">
-                                <input type="hidden" name="product_type" value="jaket">
+                                <input type="hidden" name="id" value="{{ $imgIndex }}">
+                                <input type="hidden" name="name" value="{{ $productName }}">
+                                <input type="hidden" name="price" value="{{ $productPrice }}">
+                                <input type="hidden" name="qty" value="1">
                                 <button class="w-full bg-black text-white text-sm py-2 rounded-full btn-anim" type="submit">Keranjang</button>
                             </form>
 
@@ -133,7 +147,6 @@
             @endfor
         </div>
     </section>
-
 </main>
 
 <!-- Animasi slide-up (CSS ringan) -->

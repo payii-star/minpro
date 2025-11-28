@@ -1,49 +1,53 @@
+@extends('layouts.app')
 
+@section('content')
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-semibold mb-6">Checkout</h1>
 
-    <div class="max-w-3xl mx-auto px-6 py-10">
-        @if(session('error'))
-            <div class="mb-4 p-3 bg-red-100 text-red-800 rounded">{{ session('error') }}</div>
-        @endif
+    {{-- Pilih alamat (submit GET supaya reload dengan selected address) --}}
+    <form method="GET" action="{{ route('checkout.index') }}" class="mb-4">
+        <label class="block text-sm font-medium mb-2">Pilih Alamat Pengiriman</label>
+        <select name="address_id" onchange="this.form.submit()" class="mt-1 block w-full rounded border px-3 py-2">
+            <option value="">-- Pilih alamat --</option>
+            @foreach(auth()->user()->addresses as $addr)
+                <option value="{{ $addr->id }}"
+                    {{ (isset($selectedAddress) && $selectedAddress->id === $addr->id) ? 'selected' : '' }}>
+                    {{ $addr->receiver_name }} — {{ \Illuminate\Support\Str::limit($addr->address, 60) }}
+                    @if($addr->is_default) (Default) @endif
+                </option>
+            @endforeach
+        </select>
+    </form>
 
-        <div class="bg-white p-6 rounded shadow">
-            <h3 class="text-lg font-semibold mb-4">Alamat Pengiriman</h3>
-            <form method="POST" action="{{ route('checkout.process') }}">
-                @csrf
-                <div class="mb-3">
-                    <label class="block text-sm font-medium">Nama</label>
-                    <input type="text" name="name" value="{{ old('name') }}" class="w-full p-2 border rounded">
-                    @error('name') <div class="text-sm text-red-600">{{ $message }}</div> @enderror
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm font-medium">Alamat</label>
-                    <textarea name="address" class="w-full p-2 border rounded">{{ old('address') }}</textarea>
-                    @error('address') <div class="text-sm text-red-600">{{ $message }}</div> @enderror
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm font-medium">Telepon</label>
-                    <input type="text" name="phone" value="{{ old('phone') }}" class="w-full p-2 border rounded">
-                    @error('phone') <div class="text-sm text-red-600">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="mb-6">
-                    <h4 class="font-semibold">Ringkasan Pesanan</h4>
-                    @if(empty($cart))
-                        <p class="text-sm text-gray-600">Keranjang kosong.</p>
-                    @else
-                        <ul class="mt-2 space-y-2">
-                            @foreach($cart as $item)
-                                <li class="flex justify-between"><span>{{ $item['name'] }} x {{ $item['qty'] }}</span><span>Rp {{ number_format($item['subtotal'],0,',','.') }}</span></li>
-                            @endforeach
-                        </ul>
-                        <div class="mt-3 text-right font-semibold">Total: Rp {{ number_format($total,0,',','.') }}</div>
-                    @endif
+    {{-- Tampilkan ringkasan alamat yang dipilih (otomatis default/first jika ada) --}}
+    @if($selectedAddress)
+        <div class="mb-6 p-4 border rounded bg-white">
+            <div class="flex justify-between items-start">
+                <div>
+                    <div class="font-semibold">{{ $selectedAddress->receiver_name }} @if($selectedAddress->label) ({{ $selectedAddress->label }}) @endif</div>
+                    <div class="text-sm text-gray-600">{{ $selectedAddress->phone }}</div>
+                    <div class="mt-2 text-sm">{{ $selectedAddress->address }}@if($selectedAddress->city), {{ $selectedAddress->city }}@endif</div>
+                    @if($selectedAddress->postal_code) <div class="text-xs text-gray-500 mt-1">Kode Pos: {{ $selectedAddress->postal_code }}</div> @endif
                 </div>
 
-                <div class="flex justify-end">
-                    <a href="{{ route('cart.index') }}" class="mr-2 px-4 py-2 border rounded">Kembali ke Keranjang</a>
-                    <button class="px-4 py-2 bg-green-600 text-white rounded">Bayar / Submit</button>
+                <div class="text-sm">
+                    <a href="{{ route('addresses.edit', $selectedAddress) }}" class="text-indigo-600">Edit</a>
                 </div>
-            </form>
+            </div>
         </div>
-    </div>
+    @else
+        <div class="mb-6 p-4 border rounded bg-yellow-50">Belum ada alamat. <a href="{{ route('addresses.create') }}" class="text-black">Tambah alamat</a></div>
+    @endif
 
+    {{-- Form utama checkout --}}
+    <form method="POST" action="{{ route('checkout.process') }}">
+        @csrf
+        <input type="hidden" name="address_id" value="{{ $selectedAddress->id ?? '' }}">
+
+        {{-- tampilkan ringkasan cart, total, payment fields, dll --}}
+        <div class="mb-4">
+            <button type="submit" class="px-4 py-2 bg-black text-white rounded-full">Proses Checkout</button>
+        </div>
+    </form>
+</div>
+@endsection

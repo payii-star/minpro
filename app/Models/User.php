@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Filament\Models\Contracts\FilamentUser;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -42,4 +43,20 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function addresses()
+{
+    return $this->hasMany(\App\Models\UserAddress::class);
+}
+
+    public function canAccessPanel(\Filament\Panel $panel): bool
+    {
+        return $this->is_admin == 1;
+    }
+
+        public function canAccessFilament(): bool
+    {
+        return $this->is_admin == 1;
+    }
+
 }
