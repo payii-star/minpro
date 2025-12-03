@@ -12,47 +12,34 @@
         </h1>
       </div>
 
-      <!-- Center: Segmented category control (only on home) -->
+      <!-- Center: now empty (no categories) -->
       <div class="flex justify-center">
-        @if (request()->routeIs('home'))
-          <div class="hidden sm:flex items-center">
-            <div class="relative flex items-center bg-gray-100 rounded-full px-2 py-1 gap-1 category-nav" role="tablist" aria-label="Kategori Produk">
-
-              <!-- sliding indicator -->
-              <div id="cat-indicator" class="absolute h-8 rounded-full bg-black transition-all duration-300" style="width:0; left:0; top:3px;"></div>
-
-              <!-- links -->
-              <a href="#baju"
-                 class="relative z-10 px-4 py-2 rounded-full text-sm font-medium category-link text-gray-700"
-                 data-target="baju" role="tab">Baju</a>
-
-              <a href="#celana"
-                 class="relative z-10 px-4 py-2 rounded-full text-sm font-medium category-link text-gray-700"
-                 data-target="celana" role="tab">Celana</a>
-
-              <a href="#jaket"
-                 class="relative z-10 px-4 py-2 rounded-full text-sm font-medium category-link text-gray-700"
-                 data-target="jaket" role="tab">Jaket</a>
-            </div>
-          </div>
-        @endif
+        {{-- intentionally left blank: categories removed --}}
       </div>
 
       <!-- Right: Cart + Auth + Hamburger -->
       <div class="flex items-center justify-end space-x-4">
 
-        <!-- Cart (desktop) -->
-        <div class="hidden sm:flex sm:items-center">
-          <a href="{{ route('cart.index') }}" class="relative inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-600 bg-white hover:text-gray-800 hover:bg-gray-50 transition ease-in-out duration-150">
-            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 6h14l-2-6M10 21a1 1 0 11-2 0 1 1 0 012 0zm8 0a1 1 0 11-2 0 1 1 0 012 0z" />
-            </svg>
-            <span class="ml-2 text-sm">Cart</span>
-            <span class="ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-semibold leading-none bg-gray-100 text-gray-800">
-              {{ $cartCount ?? (session('cart') ? count(session('cart')) : 0) }}
-            </span>
-          </a>
-        </div>
+<!-- Cart (desktop) -->
+<div class="hidden sm:flex sm:items-center">
+  <a href="{{ route('cart.index') }}"
+     class="relative inline-flex items-center px-3 py-2 cart-icon">
+
+      <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none"
+           viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-2 6h14l-2-6M10 21a1 1 0 11-2 0 1 1 0 012 0zm8 0a1 1 0 11-2 0 1 1 0 012 0z" />
+      </svg>
+
+      <span class="ml-2 text-sm">Cart</span>
+
+      <span class="cart-count ml-2 inline-flex items-center justify-center
+                   px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+        {{ $cartCount ?? count(session('cart', [])) }}
+      </span>
+  </a>
+</div>
+
 
         <!-- Auth links / dropdown (desktop) -->
         <div class="hidden sm:flex sm:items-center">
@@ -100,9 +87,7 @@
   <!-- Responsive Navigation Menu (mobile) -->
   <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden" id="mobile-menu">
     <div class="pt-2 pb-3 space-y-1">
-      <a href="#baju" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-700 hover:bg-gray-50">Baju</a>
-      <a href="#celana" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-700 hover:bg-gray-50">Celana</a>
-      <a href="#jaket" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-700 hover:bg-gray-50">Jaket</a>
+      {{-- categories removed --}}
     </div>
 
     <!-- Mobile cart -->

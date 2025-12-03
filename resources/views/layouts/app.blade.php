@@ -38,8 +38,86 @@
 
     {{-- Footer: include sekali di layout, setelah main --}}
     @include('layouts.footer')
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const csrf = document.querySelector('meta[name="csrf-token"]').content;
 
-    {{-- Tempat untuk JS tambahan dari child views --}}
-    @stack('scripts')
+    // Ambil semua form add to cart
+    document.querySelectorAll('form[action="{{ route('cart.add') }}"]').forEach(form => {
+        form.addEventListener("submit", async function (e) {
+            e.preventDefault(); // Stop reload
+
+            const btn = form.querySelector("button");
+            const card = form.closest(".group") || form.closest(".product-card");
+            const cartIcon = document.querySelector(".cart-icon");
+            const formData = new FormData(form);
+
+            btn.disabled = true;
+            btn.classList.add("opacity-50");
+
+            // kirim AJAX
+            const res = await fetch(form.action, {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": csrf,
+                    "Accept": "application/json",
+                },
+                body: formData
+            });
+
+            const json = await res.json();
+
+            btn.disabled = false;
+            btn.classList.remove("opacity-50");
+
+            // ✔ ANIMASI 1: tombol berubah hijau
+            btn.classList.add("bg-green-600");
+            setTimeout(() => btn.classList.remove("bg-green-600"), 600);
+
+            // ✔ ANIMASI 2: produk goyang
+            if (card) {
+                card.classList.add("shake");
+                setTimeout(() => card.classList.remove("shake"), 500);
+            }
+
+            // ✔ ANIMASI 3: keranjang bounce
+            if (cartIcon) {
+                cartIcon.classList.add("cart-bounce");
+                setTimeout(() => cartIcon.classList.remove("cart-bounce"), 700);
+            }
+
+            // ✔ update badge cart count
+            const badge = document.querySelector(".cart-count");
+            if (badge) badge.textContent = json.cart_count;
+        });
+    });
+});
+</script>
+
+<style>
+/* Shake effect item */
+.shake {
+    animation: shakeAnim 0.4s ease;
+}
+@keyframes shakeAnim {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    50% { transform: translateX(4px); }
+    75% { transform: translateX(-3px); }
+    100% { transform: translateX(0); }
+}
+
+/* Bounce icon cart */
+.cart-bounce {
+    animation: cartBounce 0.6s ease;
+}
+@keyframes cartBounce {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.2); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+</style>
+
 </body>
 </html>

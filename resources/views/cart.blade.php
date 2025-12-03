@@ -15,6 +15,13 @@
         </div>
     @endif
 
+    @php
+        // $cart: array dari session atau dari controller
+        $cart = $cart ?? session('cart', []);
+        // total kalkulasi fallback
+        $calculatedTotal = 0;
+    @endphp
+
     @if(empty($cart))
         <div class="p-8 bg-white border rounded-lg shadow-sm text-center">
             <p class="text-lg text-gray-600">Keranjangmu masih kosong.</p>
@@ -25,30 +32,71 @@
             <!-- Items list -->
             <div class="lg:col-span-8">
                 <div class="bg-white border rounded-lg shadow-sm divide-y">
-                    @foreach($cart as $item)
+                    @foreach($cart as $index => $item)
+                        @php
+                            // item['id'], item['name'], item['price'], item['quantity'] diharapkan ada
+                            $id = $item['id'] ?? null;
+                            $qty = intval($item['quantity'] ?? $item['qty'] ?? 1);
+                            $price = $item['price'] ?? 0;
+
+                            // coba ambil product dari DB supaya gambar/description/stok selalu up-to-date
+                            $product = null;
+                            if ($id) {
+                                try {
+                                    $product = \App\Models\Product::find($id);
+                                } catch (\Throwable $e) {
+                                    $product = null;
+                                }
+                            }
+
+                            // Tentukan image: prioritas
+                            // 1) kalau item punya image (session) -> gunakan (bisa absolute atau relatif)
+                            // 2) kalau $product ada -> pakai cover_url accessor
+                            // 3) fallback asset model.jpg
+                            $img = $item['image'] ?? null;
+                            if ($img) {
+                                // jika relatif (tidak http...), anggap di storage
+                                if (! preg_match('/^https?:\\/\\//i', $img)) {
+                                    $img = asset('storage/' . ltrim($img, '/'));
+                                }
+                            } elseif ($product && ($product->cover_url ?? null)) {
+                                $img = $product->cover_url;
+                            } else {
+                                $img = asset('model.jpg');
+                            }
+
+                            // tampilkan nama & description & stock jika ada product dari DB
+                            $displayName = $product->name ?? ($item['name'] ?? 'Unnamed product');
+                            $displayDesc = $product->description ?? ($item['description'] ?? null);
+                            $displayStock = $product->stock ?? null;
+
+                            // subtotal
+                            $subtotal = ($item['subtotal'] ?? ($price * $qty));
+                            $calculatedTotal += $subtotal;
+                        @endphp
+
                         <div class="p-4 flex gap-4 items-start">
-                            <!-- Thumbnail (optional) -->
+                            <!-- Thumbnail -->
                             <div class="flex-shrink-0 w-20 h-20 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
-                                @if(!empty($item['image']))
-                                    <img src="{{ $item['image'] }}" alt="{{ $item['name'] }}" class="object-cover w-full h-full">
-                                @else
-                                    <svg class="w-10 h-10 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h18v18H3z" />
-                                    </svg>
-                                @endif
+                                <img src="{{ $img }}" alt="{{ $displayName }}" class="object-cover w-full h-full">
                             </div>
 
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-start justify-between">
-                                    <div>
-                                        <div class="font-medium text-gray-900 truncate">{{ $item['name'] ?? 'Unnamed product' }}</div>
-                                        @if(!empty($item['options'] ?? null))
-                                            <div class="text-xs text-gray-500 mt-1">{{ $item['options'] }}</div>
+                                    <div class="pr-4">
+                                        <div class="font-medium text-gray-900 truncate">{{ $displayName }}</div>
+
+                                        @if(!empty($displayDesc))
+                                            <div class="text-xs text-gray-500 mt-1 line-clamp-2">{{ \Illuminate\Support\Str::limit($displayDesc, 120) }}</div>
+                                        @endif
+
+                                        @if(!is_null($displayStock))
+                                            <div class="text-xs text-gray-500 mt-1">Stok: {{ $displayStock }}</div>
                                         @endif
                                     </div>
 
                                     <div class="text-right">
-                                        <div class="text-gray-700 font-semibold">Rp {{ number_format($item['price'] ?? 0) }}</div>
+                                        <div class="text-gray-700 font-semibold">Rp {{ number_format($price, 0, ',', '.') }}</div>
                                         <div class="text-xs text-gray-400">/ pcs</div>
                                     </div>
                                 </div>
@@ -56,14 +104,14 @@
                                 <div class="mt-3 flex items-center justify-between">
                                     <div class="flex items-center gap-2">
                                         <!-- Update qty form (buttons + input) -->
-                                        <form method="POST" action="{{ route('cart.update') }}" class="flex items-center gap-2">
+                                        <form method="POST" action="{{ route('cart.update') }}" class="flex items-center gap-2" style="align-items:center;">
                                             @csrf
-                                            <input type="hidden" name="id" value="{{ $item['id'] }}">
-                                            <button type="button" class="qty-decr inline-flex items-center justify-center w-8 h-8 bg-gray-100 rounded text-gray-700" data-id="{{ $item['id'] }}">−</button>
+                                            <input type="hidden" name="id" value="{{ $id }}">
+                                            <button type="button" class="qty-decr inline-flex items-center justify-center w-8 h-8 bg-gray-100 rounded text-gray-700" data-id="{{ $id }}">−</button>
 
-                                            <input type="number" name="qty" value="{{ $item['quantity'] ?? $item['qty'] ?? 1 }}" min="1" class="w-16 text-center rounded border px-2 py-1" />
+                                            <input type="number" name="qty" value="{{ $qty }}" min="1" class="w-16 text-center rounded border px-2 py-1" />
 
-                                            <button type="button" class="qty-incr inline-flex items-center justify-center w-8 h-8 bg-gray-100 rounded text-gray-700" data-id="{{ $item['id'] }}">+</button>
+                                            <button type="button" class="qty-incr inline-flex items-center justify-center w-8 h-8 bg-gray-100 rounded text-gray-700" data-id="{{ $id }}">+</button>
 
                                             <button type="submit" class="ml-3 px-3 py-1 bg-black text-white rounded-full text-sm hover:bg-black-700">Update</button>
                                         </form>
@@ -71,18 +119,21 @@
 
                                     <div class="text-sm text-gray-600">
                                         Subtotal<br>
-                                        <span class="font-semibold text-gray-800">Rp {{ number_format($item['subtotal'] ?? (($item['price'] ?? 0) * ($item['quantity'] ?? $item['qty'] ?? 1))) }}</span>
+                                        <span class="font-semibold text-gray-800">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
                                     </div>
                                 </div>
 
                                 <div class="mt-3 flex items-center gap-3">
                                     <form method="POST" action="{{ route('cart.remove') }}" onsubmit="return confirm('Hapus item dari keranjang?')">
                                         @csrf
-                                        <input type="hidden" name="id" value="{{ $item['id'] }}">
+                                        <input type="hidden" name="id" value="{{ $id }}">
                                         <button type="submit" class="text-red-600 text-sm hover:underline">Hapus</button>
                                     </form>
 
-                                    <a href="{{ route('addresses.create') . '?from_checkout=1' }}" class="text-sm text-gray-600 hover:underline"></a>
+                                    {{-- optional: link to product detail jika product ada --}}
+                                    @if($product)
+                                        <a href="{{ route('products.show', $product->id ?? $id) }}" class="text-sm text-gray-600 hover:underline">Lihat detail</a>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -98,18 +149,12 @@
                     <div class="mt-4 space-y-3">
                         <div class="flex justify-between text-gray-600">
                             <div>Subtotal</div>
-                            <div class="font-medium text-gray-800">Rp {{ number_format($total ?? 0) }}</div>
+                            <div class="font-medium text-gray-800">Rp {{ number_format($total ?? $calculatedTotal, 0, ',', '.') }}</div>
                         </div>
-
-                        {{-- Tambahkan biaya kirim atau diskon di sini jika perlu --}}
-                        {{-- <div class="flex justify-between text-gray-600">
-                            <div>Ongkir</div>
-                            <div class="font-medium text-gray-800">Rp 0</div>
-                        </div> --}}
 
                         <div class="border-t pt-4 flex items-center justify-between">
                             <div class="text-sm text-gray-600">Total</div>
-                            <div class="text-2xl font-semibold text-gray-900">Rp {{ number_format($total ?? 0) }}</div>
+                            <div class="text-2xl font-semibold text-gray-900">Rp {{ number_format($total ?? $calculatedTotal, 0, ',', '.') }}</div>
                         </div>
                     </div>
 
@@ -127,22 +172,27 @@
     @endif
 </div>
 
-<!-- Small JS untuk handle + / - qty (non-AJAX, modifies input value) -->
+@push('styles')
+<style>
+    /* optional helper */
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+</style>
+@endpush
+
 @push('scripts')
 <script>
 document.addEventListener('click', function (e) {
     if (e.target.matches('.qty-incr')) {
-        const container = e.target.closest('form');
-        const input = container.querySelector('input[name="qty"]');
+        const form = e.target.closest('form');
+        const input = form.querySelector('input[name="qty"]');
         input.value = Math.max(1, parseInt(input.value || 0) + 1);
     }
     if (e.target.matches('.qty-decr')) {
-        const container = e.target.closest('form');
-        const input = container.querySelector('input[name="qty"]');
+        const form = e.target.closest('form');
+        const input = form.querySelector('input[name="qty"]');
         input.value = Math.max(1, (parseInt(input.value || 0) - 1));
     }
 });
 </script>
 @endpush
-
 @endsection

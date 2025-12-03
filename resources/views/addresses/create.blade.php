@@ -6,7 +6,7 @@
 
     <div class="bg-white border rounded-lg shadow-sm">
         <header class="px-6 py-6 border-b">
-            <h1 class="text-2xl font-semibold text-gray-800">Tambah Alamat</h1>
+            <h1 class="text-2xl font-semibold text-gray-800" >Tambah Alamat</h1>
             <p class="text-sm text-gray-500 mt-1">Simpan alamat baru ke profilmu untuk dipakai saat checkout.</p>
         </header>
 

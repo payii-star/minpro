@@ -29,12 +29,16 @@ class ProductResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('sku')->label('SKU')->maxLength(100),
                 TextInput::make('name')->required()->maxLength(255),
                 Textarea::make('description'),
                 TextInput::make('price')->numeric()->required(),
                 TextInput::make('stock')->numeric()->required(),
-                FileUpload::make('image')->image()->disk('public')->directory('products'),
+                FileUpload::make('photos')
+                    ->multiple()
+                    ->image()
+                    ->disk('public')
+                    ->directory('products')
+                    ->label('Images'),
                 Toggle::make('is_active')->label('Active')->default(true),
             ]);
     }
@@ -43,7 +47,10 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
-                ImageColumn::make('image')->square(),
+                ImageColumn::make('cover')
+                    ->label('Image')
+                    ->square()
+                    ->getStateUsing(fn ($record) => $record->cover_url),
                 TextColumn::make('name')->searchable()->sortable(),
                 TextColumn::make('price')->sortable()->formatStateUsing(fn ($state) => number_format((float)$state, 0, ',', '.')),
                 TextColumn::make('stock')->sortable(),

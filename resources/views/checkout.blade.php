@@ -36,7 +36,7 @@
             </div>
         </div>
     @else
-        <div class="mb-6 p-4 border rounded bg-yellow-50">Belum ada alamat. <a href="{{ route('addresses.create') }}" class="text-black">Tambah alamat</a></div>
+        <div class="mb-6 p-4 border rounded bg-yellow-50">Belum ada alamat. <a href="{{ route('addresses.create') }}" class="text-indigo-600">Tambah alamat</a></div>
     @endif
 
     {{-- Form utama checkout --}}

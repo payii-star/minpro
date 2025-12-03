@@ -4,7 +4,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\UserAddressController;
+use App\Http\Controllers\ProductController; // <-- controller detail produk
 use Illuminate\Support\Facades\Route;
+use App\Models\Product;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,15 +15,36 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
-})->name('home'); // opsional beri nama home
+    // Ambil produk aktif; paginate supaya gak ngeluarin semua sekaligus
+    $products = Product::where('is_active', true)->latest()->paginate(12);
 
-// Dashboard — hanya untuk user terautentikasi & terverifikasi
+    // Kalau mau ambil semua tanpa paginate: ->get()
+    return view('welcome', compact('products'));
+})->name('home');
+
+/*
+|-----------------------------------------------------------------------
+| Public product routes (visitor can view product detail without login)
+|-----------------------------------------------------------------------
+*/
+// Halaman detail produk (public) -- implicit model binding by id
+Route::get('/products/{product}', [ProductController::class, 'show'])
+    ->name('products.show');
+
+/*
+|-----------------------------------------------------------------------
+| Dashboard — hanya untuk user terautentikasi & terverifikasi
+|-----------------------------------------------------------------------
+*/
 Route::get('/dashboard', function () {
     return view('dashboard'); // pastikan ada resources/views/dashboard.blade.php
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// Profile (provided by ProfileController)
+/*
+|-----------------------------------------------------------------------
+| Profile (provided by ProfileController)
+|-----------------------------------------------------------------------
+*/
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -31,24 +54,21 @@ Route::middleware('auth')->group(function () {
 require __DIR__.'/auth.php';
 
 /*
-|--------------------------------------------------------------------------
-| Public product routes
-|--------------------------------------------------------------------------
-| (Visitors can still view products without login)
-*/
-// Optional product routes…
-
-/*
-|--------------------------------------------------------------------------
+|-----------------------------------------------------------------------
 | Protected Cart, Checkout & Address routes (require auth)
-|--------------------------------------------------------------------------
+|-----------------------------------------------------------------------
+|
+| Catatan:
+| - Cart/checkout/addresses tetap berada di middleware('auth') seperti
+|   implementasi awal lo. Kalau mau biarkan pengunjung menambah ke cart
+|   tanpa login, kita bisa pindahkan cart.add out dari group auth.
 */
 Route::middleware('auth')->group(function () {
 
     /*
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     | CART Routes
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     */
     Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -56,9 +76,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
 
     /*
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     | DEBUG ROUTE (SEMENTARA!) — untuk menguji cart di checkout
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     | Buka: http://127.0.0.1:8000/test-add/1
     | Setelah berhasil dan cart muncul di checkout, route boleh dihapus.
     */
@@ -77,17 +97,17 @@ Route::middleware('auth')->group(function () {
     })->name('test.add');
 
     /*
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     | CHECKOUT Routes
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     */
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
 
     /*
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     | ADDRESS Routes
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     */
     Route::resource('addresses', UserAddressController::class)->except(['show']);
     Route::post('addresses/{address}/set-default', [UserAddressController::class, 'setDefault'])
