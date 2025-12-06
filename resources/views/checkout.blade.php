@@ -19,24 +19,57 @@
         </select>
     </form>
 
-    {{-- Tampilkan ringkasan alamat yang dipilih (otomatis default/first jika ada) --}}
+    {{-- Ringkasan alamat yang dipilih --}}
     @if($selectedAddress)
-        <div class="mb-6 p-4 border rounded bg-white">
-            <div class="flex justify-between items-start">
-                <div>
-                    <div class="font-semibold">{{ $selectedAddress->receiver_name }} @if($selectedAddress->label) ({{ $selectedAddress->label }}) @endif</div>
-                    <div class="text-sm text-gray-600">{{ $selectedAddress->phone }}</div>
-                    <div class="mt-2 text-sm">{{ $selectedAddress->address }}@if($selectedAddress->city), {{ $selectedAddress->city }}@endif</div>
-                    @if($selectedAddress->postal_code) <div class="text-xs text-gray-500 mt-1">Kode Pos: {{ $selectedAddress->postal_code }}</div> @endif
+        <div class="mb-6 p-4 border rounded-xl bg-white shadow-sm">
+            <div class="flex justify-between items-start gap-4">
+                @php
+                    $addr = $selectedAddress;
+                @endphp
+
+                <div class="space-y-1 text-sm text-gray-700">
+                    {{-- Nama penerima + label --}}
+                    <p class="font-semibold text-gray-900">
+                        {{ $addr->receiver_name }}
+                        @if($addr->label)
+                            <span class="text-xs text-gray-500">
+                                ({{ $addr->label }})
+                            </span>
+                        @endif
+                    </p>
+
+                    {{-- No HP --}}
+                    <p>{{ $addr->phone }}</p>
+
+                    {{-- Alamat lengkap: jalan, kota, provinsi --}}
+                    <p>
+                        {{ $addr->address }}
+                        @if($addr->city), {{ $addr->city }}@endif
+                        @if($addr->province), {{ $addr->province }}@endif
+                    </p>
+
+                    {{-- Kode pos --}}
+                    @if($addr->postal_code)
+                        <p class="text-xs text-gray-500">
+                            Kode Pos: {{ $addr->postal_code }}
+                        </p>
+                    @endif
                 </div>
 
                 <div class="text-sm">
-                    <a href="{{ route('addresses.edit', $selectedAddress) }}" class="text-indigo-600">Edit</a>
+                    <a href="{{ route('addresses.edit', $selectedAddress) }}" class="text-indigo-600 hover:underline">
+                        Edit
+                    </a>
                 </div>
             </div>
         </div>
     @else
-        <div class="mb-6 p-4 border rounded bg-yellow-50">Belum ada alamat. <a href="{{ route('addresses.create') }}" class="text-indigo-600">Tambah alamat</a></div>
+        <div class="mb-6 p-4 border rounded bg-yellow-50 text-sm">
+            Belum ada alamat.
+            <a href="{{ route('addresses.create') }}" class="text-indigo-600 hover:underline">
+                Tambah alamat
+            </a>
+        </div>
     @endif
 
     {{-- Form utama checkout --}}
@@ -44,9 +77,11 @@
         @csrf
         <input type="hidden" name="address_id" value="{{ $selectedAddress->id ?? '' }}">
 
-        {{-- tampilkan ringkasan cart, total, payment fields, dll --}}
+        {{-- Nanti di sini bisa ditambah ringkasan cart, pilihan metode pembayaran, dll --}}
         <div class="mb-4">
-            <button type="submit" class="px-4 py-2 bg-black text-white rounded-full">Proses Checkout</button>
+            <button type="submit" class="px-4 py-2 bg-black text-white rounded-full hover:bg-gray-900">
+                Proses Checkout
+            </button>
         </div>
     </form>
 </div>

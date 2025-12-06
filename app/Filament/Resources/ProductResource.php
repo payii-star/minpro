@@ -7,15 +7,17 @@ use App\Models\Product;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Resources\Resource;
-use Filament\Resources\Form;   // <-- PASTIKAN ini Filament\Resources\Form
-use Filament\Resources\Table;  // <-- PASTIKAN ini Filament\Resources\Table
+use Filament\Resources\Form;
+use Filament\Resources\Table;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
 
 class ProductResource extends Resource
 {
@@ -29,17 +31,38 @@ class ProductResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('name')->required()->maxLength(255),
+                TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
+
+                // Dropdown kategori
+                Select::make('category_id')
+                    ->label('Kategori')
+                    ->relationship('category', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+
                 Textarea::make('description'),
-                TextInput::make('price')->numeric()->required(),
-                TextInput::make('stock')->numeric()->required(),
+
+                TextInput::make('price')
+                    ->numeric()
+                    ->required(),
+
+                TextInput::make('stock')
+                    ->numeric()
+                    ->required(),
+
                 FileUpload::make('photos')
                     ->multiple()
                     ->image()
                     ->disk('public')
                     ->directory('products')
                     ->label('Images'),
-                Toggle::make('is_active')->label('Active')->default(true),
+
+                Toggle::make('is_active')
+                    ->label('Active')
+                    ->default(true),
             ]);
     }
 
@@ -51,13 +74,33 @@ class ProductResource extends Resource
                     ->label('Image')
                     ->square()
                     ->getStateUsing(fn ($record) => $record->cover_url),
-                TextColumn::make('name')->searchable()->sortable(),
-                TextColumn::make('price')->sortable()->formatStateUsing(fn ($state) => number_format((float)$state, 0, ',', '.')),
-                TextColumn::make('stock')->sortable(),
-                IconColumn::make('is_active')->boolean(),
+
+                TextColumn::make('name')
+                    ->searchable()
+                    ->sortable(),
+
+                // Kolom kategori
+                TextColumn::make('category.name')
+                    ->label('Kategori')
+                    ->sortable(),
+
+                TextColumn::make('price')
+                    ->sortable()
+                    ->formatStateUsing(
+                        fn ($state) => number_format((float) $state, 0, ',', '.')
+                    ),
+
+                TextColumn::make('stock')
+                    ->sortable(),
+
+                IconColumn::make('is_active')
+                    ->boolean(),
             ])
             ->filters([
-                //
+                // Filter berdasarkan kategori
+                SelectFilter::make('category')
+                    ->relationship('category', 'name')
+                    ->label('Kategori'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

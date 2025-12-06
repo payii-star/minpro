@@ -2,148 +2,88 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\UserAddress;
-use App\Models\Order;
-use App\Models\OrderItem;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use App\Models\UserAddress;
 
 class CheckoutController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
+public function index(Request $request)
+{
+    $user = $request->user();
+    $cart = session('cart', []);
+
+    if (empty($cart)) {
+        return redirect()->route('cart.index')
+            ->with('error', 'Keranjangmu masih kosong.');
     }
 
-    /**
-     * Tampilkan halaman checkout.
-     */
-    public function index(Request $request)
-    {
-        // Ambil cart dari session (default empty array)
-        $cartAssoc = session()->get('cart', []);
+    // Ambil semua alamat milik user
+    $addresses = $user->addresses()->get(); // pastikan relasi addresses() ada di model User
 
-        // Jika tidak ada cart di session tetapi ada product_id di query (Buy Now flow),
-        // buat satu item sementara untuk ditampilkan di checkout (tidak disimpan ke session).
-        if ((empty($cartAssoc) || count($cartAssoc) === 0) && $request->filled('product_id')) {
-            $productId = (int) $request->product_id;
-
-            // TODO: kalau ada model Product, ambil data produk di sini untuk nama & price
-            $cart = [
-                [
-                    'id' => $productId,
-                    'name' => 'Produk #' . $productId,
-                    'price' => 0,
-                    'quantity' => 1,
-                    'subtotal' => 0,
-                ],
-            ];
-        } else {
-            // Ubah associative cart (keyed by product id) jadi indexed array
-            $cart = array_values($cartAssoc);
-        }
-
-        if (!is_array($cart)) {
-            $cart = [];
-        }
-
-        // Hitung total (aman terhadap struktur yang mungkin tidak punya subtotal)
-        $total = array_reduce($cart, function ($carry, $item) {
-            $price = isset($item['price']) ? (float)$item['price'] : 0;
-            $qty = isset($item['quantity']) ? (int)$item['quantity'] : (isset($item['qty']) ? (int)$item['qty'] : 1);
-            $subtotal = isset($item['subtotal']) ? (float)$item['subtotal'] : ($price * $qty);
-            return $carry + $subtotal;
-        }, 0);
-
-        // Determine selected address (priority: request->address_id, default, first)
-        $selectedAddress = null;
-
-        if ($request->filled('address_id')) {
-            $selectedAddress = UserAddress::where('id', $request->address_id)
-                ->where('user_id', auth()->id())
-                ->first();
-        }
-
-        if (! $selectedAddress) {
-            $selectedAddress = auth()->user()->addresses()->where('is_default', true)->first();
-        }
-
-        if (! $selectedAddress) {
-            $selectedAddress = auth()->user()->addresses()->first();
-        }
-
-        return view('checkout', compact('cart', 'total', 'selectedAddress'));
+    if ($addresses->isEmpty()) {
+        return redirect()->route('addresses.index')
+            ->with('error', 'Tambahkan alamat pengiriman terlebih dahulu.');
     }
 
+    // 🔥 Tentukan alamat yang dipilih
+    $selectedAddress = null;
+
+    // Kalau user kirim ?address_id=... lewat select
+    if ($request->filled('address_id')) {
+        $selectedAddress = $addresses->firstWhere('id', (int) $request->address_id);
+    }
+
+    // Kalau belum ada (pertama kali buka halaman), pakai default / alamat pertama
+    if (! $selectedAddress) {
+        $selectedAddress = $addresses->firstWhere('is_default', true)
+            ?? $addresses->first();
+    }
+
+    $total = collect($cart)->sum('subtotal');
+
+    // 🟢 SESUAI NAMA FILE: resources/views/checkout.blade.php
+    return view('checkout', [
+        'cart'            => $cart,
+        'addresses'       => $addresses,
+        'selectedAddress' => $selectedAddress,   // <--- dikirim ke Blade
+        'total'           => $total,
+    ]);
+}
+
+
     /**
-     * Proses checkout: buat Order & OrderItems, snapshot alamat, kosongkan cart.
+     * STEP 2: Halaman proses / konfirmasi checkout.
+     * Route: POST /checkout/process
      */
     public function process(Request $request)
     {
-        $data = $request->validate([
-            'address_id' => 'required|exists:user_addresses,id',
-            // tambahkan validasi lain (payment_method, dsb.) kalau perlu
-        ]);
-
-        // ambil address dan pastikan milik user
-        $address = UserAddress::where('id', $data['address_id'])
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
-
-        // ambil cart dari session
-        $cartAssoc = session()->get('cart', []);
-        $cart = array_values($cartAssoc);
+        $user = $request->user();
+        $cart = session('cart', []);
 
         if (empty($cart)) {
-            return redirect()->route('cart.index')->with('error', 'Keranjang kosong. Tambahkan produk sebelum checkout.');
+            return redirect()->route('cart.index')
+                ->with('error', 'Keranjangmu masih kosong.');
         }
 
-        // hitung total ulang (safety)
-        $total = array_reduce($cart, function ($carry, $item) {
-            $price = isset($item['price']) ? (float)$item['price'] : 0;
-            $qty = isset($item['quantity']) ? (int)$item['quantity'] : (isset($item['qty']) ? (int)$item['qty'] : 1);
-            $subtotal = isset($item['subtotal']) ? (float)$item['subtotal'] : ($price * $qty);
-            return $carry + $subtotal;
-        }, 0);
+        // Validasi alamat dipilih
+        $request->validate([
+            'address_id' => ['required', 'integer', 'exists:user_addresses,id'],
+        ]);
 
-        DB::beginTransaction();
+        // Pastikan alamat milik user yang login
+        /** @var \App\Models\UserAddress $address */
+        $address = $user->addresses()
+            ->where('id', $request->address_id)
+            ->firstOrFail();
 
-        try {
-            // buat order utama
-            $order = Order::create([
-                'user_id' => auth()->id(),
-                'total' => $total,
-                'status' => 'pending',
-                'address_snapshot' => $address->toArray(),
-                'meta' => null,
-            ]);
+        $total = collect($cart)->sum('subtotal');
 
-            // simpan tiap item
-            foreach ($cart as $item) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item['id'] ?? null,
-                    'name' => $item['name'] ?? 'Unnamed',
-                    'price' => $item['price'] ?? 0,
-                    'quantity' => $item['quantity'] ?? $item['qty'] ?? 1,
-                    'subtotal' => $item['subtotal'] ?? (($item['price'] ?? 0) * ($item['quantity'] ?? $item['qty'] ?? 1)),
-                    'meta' => $item['meta'] ?? null,
-                ]);
-            }
-
-            DB::commit();
-
-            // kosongkan cart
-            session()->forget('cart');
-
-            // redirect ke halaman detail order supaya user langsung lihat hasilnya
-            return redirect()->route('orders.show', $order->id)
-                ->with('success', 'Checkout berhasil. Nomor order: ' . $order->id);
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            Log::error('Checkout error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return back()->with('error', 'Terjadi kesalahan saat membuat order: ' . $e->getMessage());
-        }
+        // NANTI di sini kita bikin Order + Midtrans.
+        // Sekarang cuma tampilkan halaman konfirmasi.
+        return view('checkout.process', [
+            'cart'    => $cart,
+            'address' => $address,
+            'total'   => $total,
+        ]);
     }
 }

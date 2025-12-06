@@ -21,6 +21,7 @@ class Product extends Model
         'stock',
         'photos',    // JSON array: ["products/abc.jpg", ...]
         'is_active',
+        'category_id', // <- tambahan, relasi ke tabel categories
     ];
 
     /**
@@ -32,6 +33,15 @@ class Product extends Model
         'stock'     => 'integer',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Relasi ke Category.
+     * Pemakaian: $product->category->name
+     */
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
 
     /**
      * Boot model events for auto-generating slug when missing.
@@ -99,6 +109,6 @@ class Product extends Model
     public function getFormattedPriceAttribute(): string
     {
         $price = $this->price ?? 0;
-        return number_format((float)$price, 0, ',', '.');
+        return number_format((float) $price, 0, ',', '.');
     }
 }
